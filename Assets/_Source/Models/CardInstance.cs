@@ -1,3 +1,4 @@
+using _Source.Core;
 using _Source.ScriptableObjects;
 
 namespace _Source.Models
@@ -15,6 +16,7 @@ namespace _Source.Models
 
         public void MoveToLayout(int newLayoutId)
         {
+            CardPosition = CardGame.Instance.GetCardsInLayout(newLayoutId).Count;
             LayoutId = newLayoutId;
         }
     }
