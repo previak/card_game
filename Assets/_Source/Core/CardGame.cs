@@ -9,32 +9,20 @@ namespace _Source.Core
 {
     public class CardGame : MonoBehaviour
     {
-        [SerializeField]
-        private GameObject cardPrefab;
+        [SerializeField] private GameObject cardPrefab;
+        [SerializeField] private List<int> playerLayoutIds;
+        [SerializeField] private int deckLayoutId;
+        [field: SerializeField] private int HandCapacity { get; set; }
+        [field: SerializeField] public List<CardAsset> InitialCards { get; set; }  = new List<CardAsset>();
+        [field: SerializeField] private List<CardAsset> Deck { get; set; } = new List<CardAsset>();
+        [field: SerializeField] public int FieldLayoutId { get; private set; }
         
-        [SerializeField]
-        private List<int> playerLayoutIds;
-        
-        private static CardGame _instance;
-
-        [field: SerializeField]
-        public List<CardAsset> InitialCards { get; set; }  = new List<CardAsset>();
-        
-        private Dictionary<CardInstance, CardView> _allCards = new Dictionary<CardInstance, CardView>();
-        
-        public static CardGame Instance
-        {
-            get => _instance;
-            set
-            {
-                if (_instance == null)
-                    _instance = value;
-            }
-        }
+        private readonly Dictionary<CardInstance, CardView> _allCards = new Dictionary<CardInstance, CardView>();
+        public static CardGame Instance { get; private set; }
 
         private void Awake()
         {
-            _instance = this;
+            Instance = this;
         }
         
         private void Start()
@@ -42,7 +30,7 @@ namespace _Source.Core
             StartGame();
         }
 
-        public void StartGame()
+        private void StartGame()
         {
             foreach (var layoutId in playerLayoutIds)
             {
@@ -51,18 +39,24 @@ namespace _Source.Core
                     CreateCard(cardAsset, layoutId);
                 }
             }
+            InitDeck();
         }
         
         private void CreateCard(CardAsset asset, int layoutId)
         {
-            CardInstance instance = new CardInstance(asset);
+            var instance = new CardInstance(asset);
             CreateCardView(instance);
             instance.MoveToLayout(layoutId);
         }
         
         private void CreateCardView(CardInstance instance)
         {
-            CardView view = Instantiate(cardPrefab, transform).GetComponent<CardView>();
+            if (_allCards.ContainsKey(instance))
+            {
+                return;
+            }
+            
+            var view = Instantiate(cardPrefab, transform).GetComponent<CardView>();
             view.Init(instance);
             _allCards.Add(instance, view);
         }
@@ -74,6 +68,58 @@ namespace _Source.Core
                 .Select(pair => pair.Key)
                 .ToList();
         }
+
+        public CardView GetCardView(CardInstance instance)
+        {
+            return _allCards[instance];
+        }
         
+        public void RecalculateLayout(int layoutId)
+        {
+            var cards = GetCardsInLayout(layoutId);
+            for (var i = 0; i < cards.Count; i++)
+            {
+                cards[i].CardPosition = i;
+            }
+        }
+        
+        public void StartTurn()
+        {
+            foreach (var layoutId in playerLayoutIds)
+            {
+                var cardsInHand = GetCardsInLayout(layoutId);
+
+                while (cardsInHand.Count < HandCapacity)
+                {
+                    var cardsInDeck = GetCardsInLayout(deckLayoutId);
+                    if (cardsInDeck.Count == 0)
+                    {
+                        Debug.Log("Deck is empty!");
+                        return;
+                    }
+                    var card = cardsInDeck[0];
+                    card.MoveToLayout(layoutId);
+                    cardsInHand = GetCardsInLayout(layoutId);
+                }
+            }
+        }
+        
+        private void InitDeck()
+        {
+            foreach (var deckPart in Deck)
+            {
+                CreateCard(deckPart, deckLayoutId);
+            }
+        }
+        
+        public void ShuffleLayout(int layoutId)
+        {
+            var cards = GetCardsInLayout(layoutId);
+            for (var i = cards.Count - 1; i > 0; i--)
+            {
+                var j = Random.Range(0, i + 1);
+                (cards[i].CardPosition, cards[j].CardPosition) = (cards[j].CardPosition, cards[i].CardPosition);
+            }
+        }
     }
 }

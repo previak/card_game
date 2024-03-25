@@ -7,6 +7,7 @@ namespace _Source.ScriptableObjects
     {
         public string cardName;
         public Color cardColor;
-        public Sprite cardImage;
+        public Sprite cardFrontImage;
+        public Sprite cardBackImage;
     }
 }

@@ -6,8 +6,8 @@ namespace _Source.Models
     public class CardInstance
     {
         public CardAsset CardAsset { get; private set; }
-        public int LayoutId;
-        public int CardPosition;
+        public int LayoutId { get; private set; } 
+        public int CardPosition { get; set; }
 
         public CardInstance(CardAsset asset)
         {
@@ -16,8 +16,9 @@ namespace _Source.Models
 
         public void MoveToLayout(int newLayoutId)
         {
-            CardPosition = CardGame.Instance.GetCardsInLayout(newLayoutId).Count;
+            CardGame.Instance.RecalculateLayout(LayoutId);
             LayoutId = newLayoutId;
+            CardGame.Instance.RecalculateLayout(LayoutId);
         }
     }
 }
